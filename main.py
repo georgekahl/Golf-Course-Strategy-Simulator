@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 #Pitching Wedge
 average_distace = 140
@@ -16,3 +17,11 @@ print("Standard deviation of simulated distance: ", np.std(shots))
 print("Shortest shot: ", np.min(shots))
 print("Longest shot: ", np.max(shots))
 
+#Plot Distribution
+plt.hist(shots, bins=50, edgecolor='black')
+
+plt.title("Pitching Wedge Shot Distribution")
+plt.xlabel("Distance (yards)")
+plt.ylabel("Number of Shots")
+
+plt.show()
