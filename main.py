@@ -3,8 +3,16 @@ import matplotlib.pyplot as plt
 import random
 from shapely.geometry import Point, Polygon
 
-green_points = [ (-10, 150), (5, 155), (12, 148), (10, 135), (0, 130), (-12, 135)]
-green = Polygon(green_points)
+max_distance_from_pin = 260
+min_distance_from_pin = 100
+
+max_distance_left_from_pin = 15
+max_distance_right_from_pin = 15
+
+max_offset_from_pin_x = 10
+max_offset_from_pin_y = 10
+
+
 min_pin_distance_from_edge = 5
 
 
@@ -103,8 +111,23 @@ standard_deviation_driver = [standard_deviation_x_driver, standard_deviation_y_d
 
 simulation_runs = 1000
 
+def rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, max_offset_from_pin_x, max_offset_from_pin_y):
+    rand_center_of_green_y = random.randint(min_distance_from_pin, max_distance_from_pin)
+    rand_center_of_green_x = random.randint(-max_distance_left_from_pin, max_distance_right_from_pin)
+
+    rand_x_offset = [random.randint(-max_offset_from_pin_x, max_offset_from_pin_x) for _ in range(6)]
+    rand_y_offset = [random.randint(-max_offset_from_pin_y, max_offset_from_pin_y) for _ in range(6)]
+
+    green_points = [ (rand_center_of_green_x + rand_x_offset[0], rand_center_of_green_y + rand_y_offset[0]), (rand_center_of_green_x + rand_x_offset[1], rand_center_of_green_y + rand_y_offset[1]), (rand_center_of_green_x + rand_x_offset[2], rand_center_of_green_y + rand_y_offset[2]), (rand_center_of_green_x + rand_x_offset[3], rand_center_of_green_y + rand_y_offset[3]), (rand_center_of_green_x + rand_x_offset[4], rand_center_of_green_y + rand_y_offset[4]), (rand_center_of_green_x + rand_x_offset[5], rand_center_of_green_y + rand_y_offset[5]) ]
+    green = Polygon(green_points)
+    return green
+
 def set_pin_position(green):
     pin_area = green.buffer(-min_pin_distance_from_edge)
+
+    if pin_area.is_empty:
+        return None
+
     min_x, min_y, max_x, max_y = pin_area.bounds
 
     while True:
@@ -117,7 +140,70 @@ def set_pin_position(green):
         if pin_area.contains(pin_position):
             return pin_position
 
-def simulate_shots():
+def print_green_info(green, pin_position):
+    print("Green Coordinates: ", list(green.exterior.coords))
+    print("Pin Position: ", f"({pin_position.x:.2f}, {pin_position.y:.2f})")
+
+def get_club_parameters(club):
+    match club:
+        case "58 degree wedge":
+            average_shot = average_shot_58degreeWedge
+            standard_deviation = standard_deviation_58degreeWedge
+            return average_shot, standard_deviation
+        case "54 degree wedge":
+            average_shot = average_shot_54degreeWedge
+            standard_deviation = standard_deviation_54degreeWedge
+            return average_shot, standard_deviation
+        case "50 degree wedge":
+            average_shot = average_shot_50degreeWedge
+            standard_deviation = standard_deviation_50degreeWedge
+            return average_shot, standard_deviation
+        case "pitching wedge":
+            average_shot = average_shot_pitchingWedge
+            standard_deviation = standard_deviation_pitchingWedge
+            return average_shot, standard_deviation
+        case "9 iron":
+            average_shot = average_shot_9iron
+            standard_deviation = standard_deviation_9iron
+            return average_shot, standard_deviation
+        case "8 iron":
+            average_shot = average_shot_8iron
+            standard_deviation = standard_deviation_8iron
+            return average_shot, standard_deviation
+        case "7 iron":
+            average_shot = average_shot_7iron
+            standard_deviation = standard_deviation_7iron
+            return average_shot, standard_deviation
+        case "6 iron":
+            average_shot = average_shot_6iron
+            standard_deviation = standard_deviation_6iron
+            return average_shot, standard_deviation
+        case "5 iron":
+            average_shot = average_shot_5iron
+            standard_deviation = standard_deviation_5iron
+            return average_shot, standard_deviation
+        case "4 iron":
+            average_shot = average_shot_4iron
+            standard_deviation = standard_deviation_4iron
+            return average_shot, standard_deviation
+        case "4 hybrid":
+            average_shot = average_shot_4hybrid
+            standard_deviation = standard_deviation_4hybrid
+            return average_shot, standard_deviation
+        case "3 wood":
+            average_shot = average_shot_3wood
+            standard_deviation = standard_deviation_3wood
+            return average_shot, standard_deviation
+        case "driver":
+            average_shot = average_shot_driver
+            standard_deviation = standard_deviation_driver
+            return average_shot, standard_deviation
+
+def ask_club_selection():
+    club = input("Which club would you like to use?")
+    return club
+
+def simulate_shots(average_shot, standard_deviation):
     shots_x = np.random.normal(average_shot[0], standard_deviation[0], simulation_runs)
     shots_y = np.random.normal(average_shot[1], standard_deviation[1], simulation_runs)
     return shots_x, shots_y
@@ -148,7 +234,7 @@ def plot_shots(shots_x, shots_y, green, pin_position):
 
     plt.xlabel("Left/Right (yards)")
     plt.ylabel("Distance (yards)")
-    plt.title("Pitching Wedge Shot Distribution")
+    plt.title("Shot Distribution")
 
     plt.legend()
 
@@ -178,8 +264,17 @@ def print_statment(shots_x, shots_y, hits, pin_position, distances):
     print("Closest shot to pin: ", np.min(distances), "yards")
     print("Farthest shot from pin: ", np.max(distances), "yards")
 
-pin_position = set_pin_position(green)
-shots_x, shots_y = simulate_shots()
+
+while True:
+    green = rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, max_offset_from_pin_x, max_offset_from_pin_y)
+    pin_position = set_pin_position(green)
+    if pin_position is not None:
+        break;
+
+print_green_info(green, pin_position)
+club = ask_club_selection()
+average_shot, standard_deviation = get_club_parameters(club)
+shots_x, shots_y = simulate_shots(average_shot, standard_deviation)
 hits = check_hit_green(green, shots_x, shots_y)
 distances = distance_from_pin(pin_position, shots_x, shots_y)
 print_statment(shots_x, shots_y, hits, pin_position, distances)
