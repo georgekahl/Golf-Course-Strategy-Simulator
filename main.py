@@ -203,6 +203,13 @@ def ask_club_selection():
     club = input("Which club would you like to use?")
     return club
 
+def ask_aim(average_shot):
+    x_aim = float(input("Aim left/right (negative for left, positive for right)"))
+    y_aim = float(input("Aim short/long"))
+    aim_x = average_shot[0] = average_shot[0] + x_aim
+    aim_y = average_shot[1] = average_shot[1] + y_aim
+    return [aim_x, aim_y]
+
 def simulate_shots(average_shot, standard_deviation):
     shots_x = np.random.normal(average_shot[0], standard_deviation[0], simulation_runs)
     shots_y = np.random.normal(average_shot[1], standard_deviation[1], simulation_runs)
@@ -225,12 +232,26 @@ def check_hit_green(green, shots_x, shots_y):
             hits += 1
     return hits
 
-def plot_shots(shots_x, shots_y, green, pin_position):
+def plot_green(green, pin_position):
+    green_x, green_y = green.exterior.xy
+    plt.fill(green_x, green_y, color = "green", alpha = 0.3)
+    plt.plot(green_x, green_y, color = "green", label = "Green")
+    plt.scatter(pin_position.x, pin_position.y, color = "red", marker = "X", s = 100, label = "Pin")
+    plt.xlabel("Left/Right (yards)")
+    plt.ylabel("Distance (yards)")
+    plt.title("Shot Distribution")
+    
+    plt.legend()
+    
+    plt.show()
+
+def plot_shots(shots_x, shots_y, green, pin_position, aim_x, aim_y):
     green_x, green_y = green.exterior.xy
     plt.scatter(shots_x, shots_y, label = "Shots", alpha = 0.5)
     plt.fill(green_x, green_y, color = "green", alpha = 0.3)
     plt.plot(green_x, green_y, color = "green", label = "Green")
     plt.scatter(pin_position.x, pin_position.y, color = "red", marker = "X", s = 100, label = "Pin")
+    plt.scatter(aim_x, aim_y, color = "blue", marker = "o", s = 100, label = "Aim")
 
     plt.xlabel("Left/Right (yards)")
     plt.ylabel("Distance (yards)")
@@ -271,11 +292,13 @@ while True:
     if pin_position is not None:
         break;
 
+plot_green(green, pin_position)
 print_green_info(green, pin_position)
 club = ask_club_selection()
 average_shot, standard_deviation = get_club_parameters(club)
+average_shot = ask_aim(average_shot)
 shots_x, shots_y = simulate_shots(average_shot, standard_deviation)
 hits = check_hit_green(green, shots_x, shots_y)
 distances = distance_from_pin(pin_position, shots_x, shots_y)
 print_statment(shots_x, shots_y, hits, pin_position, distances)
-plot_shots(shots_x, shots_y, green, pin_position)
+plot_shots(shots_x, shots_y, green, pin_position, average_shot[0], average_shot[1])
