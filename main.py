@@ -7,14 +7,99 @@ green_points = [ (-10, 150), (5, 155), (12, 148), (10, 135), (0, 130), (-12, 135
 green = Polygon(green_points)
 min_pin_distance_from_edge = 5
 
-average_distance_x = 0
-average_distance_y = 140
-average_shot = [average_distance_x, average_distance_y]
 
-standard_deviation_x = 5
-standard_deviation_y = 3
+average_distance_x_58degreeWedge = 0
+average_distance_y_58degreeWedge = 100
+average_shot_58degreeWedge = [average_distance_x_58degreeWedge, average_distance_y_58degreeWedge]
+standard_deviation_x_58degreeWedge = 2
+standard_deviation_y_58degreeWedge = 1
+standard_deviation_58degreeWedge = [standard_deviation_x_58degreeWedge, standard_deviation_y_58degreeWedge]
 
-standard_deviation = [standard_deviation_x, standard_deviation_y]
+average_distance_x_54degreeWedge = 0
+average_distance_y_54degreeWedge = 110
+average_shot_54degreeWedge = [average_distance_x_54degreeWedge, average_distance_y_54degreeWedge]
+standard_deviation_x_54degreeWedge = 3
+standard_deviation_y_54degreeWedge = 1
+standard_deviation_54degreeWedge = [standard_deviation_x_54degreeWedge, standard_deviation_y_54degreeWedge]
+
+average_distance_x_50degreeWedge = 0
+average_distance_y_50degreeWedge = 120
+average_shot_50degreeWedge = [average_distance_x_50degreeWedge, average_distance_y_50degreeWedge]
+standard_deviation_x_50degreeWedge = 4
+standard_deviation_y_50degreeWedge = 2
+standard_deviation_50degreeWedge = [standard_deviation_x_50degreeWedge, standard_deviation_y_50degreeWedge]
+
+average_distance_x_pitchingWedge = 0
+average_distance_y_pitchingWedge = 140
+average_shot_pitchingWedge = [average_distance_x_pitchingWedge, average_distance_y_pitchingWedge]
+standard_deviation_x_pitchingWedge = 5
+standard_deviation_y_pitchingWedge = 3
+standard_deviation_pitchingWedge = [standard_deviation_x_pitchingWedge, standard_deviation_y_pitchingWedge]
+
+average_distance_x_9iron = 0
+average_distance_y_9iron = 150
+average_shot_9iron = [average_distance_x_9iron, average_distance_y_9iron]
+standard_deviation_x_9iron = 6
+standard_deviation_y_9iron = 4
+standard_deviation_9iron = [standard_deviation_x_9iron, standard_deviation_y_9iron]
+
+average_distance_x_8iron = 0
+average_distance_y_8iron = 160
+average_shot_8iron = [average_distance_x_8iron, average_distance_y_8iron]
+standard_deviation_x_8iron = 7
+standard_deviation_y_8iron = 5
+standard_deviation_8iron = [standard_deviation_x_8iron, standard_deviation_y_8iron]
+
+average_distance_x_7iron = 0
+average_distance_y_7iron = 170
+average_shot_7iron = [average_distance_x_7iron, average_distance_y_7iron]
+standard_deviation_x_7iron = 8
+standard_deviation_y_7iron = 6
+standard_deviation_7iron = [standard_deviation_x_7iron, standard_deviation_y_7iron]
+
+average_distance_x_6iron = 0
+average_distance_y_6iron = 180
+average_shot_6iron = [average_distance_x_6iron, average_distance_y_6iron]
+standard_deviation_x_6iron = 9
+standard_deviation_y_6iron = 7
+standard_deviation_6iron = [standard_deviation_x_6iron, standard_deviation_y_6iron]
+
+average_distance_x_5iron = 0
+average_distance_y_5iron = 190
+average_shot_5iron = [average_distance_x_5iron, average_distance_y_5iron]
+standard_deviation_x_5iron = 10
+standard_deviation_y_5iron = 8
+standard_deviation_5iron = [standard_deviation_x_5iron, standard_deviation_y_5iron]
+
+average_distance_x_4iron = 0
+average_distance_y_4iron = 200
+average_shot_4iron = [average_distance_x_4iron, average_distance_y_4iron]
+standard_deviation_x_4iron = 11
+standard_deviation_y_4iron = 9
+standard_deviation_4iron = [standard_deviation_x_4iron, standard_deviation_y_4iron]
+
+average_distance_x_4hybrid = 0
+average_distance_y_4hybrid = 220
+average_shot_4hybrid = [average_distance_x_4hybrid, average_distance_y_4hybrid]
+standard_deviation_x_4hybrid = 12
+standard_deviation_y_4hybrid = 10
+standard_deviation_4hybrid = [standard_deviation_x_4hybrid, standard_deviation_y_4hybrid]
+
+average_distance_x_3wood = 0
+average_distance_y_3wood = 240
+average_shot_3wood = [average_distance_x_3wood, average_distance_y_3wood]
+standard_deviation_x_3wood = 13
+standard_deviation_y_3wood = 11
+standard_deviation_3wood = [standard_deviation_x_3wood, standard_deviation_y_3wood]
+
+average_distance_x_driver = 0
+average_distance_y_driver = 260
+average_shot_driver = [average_distance_x_driver, average_distance_y_driver]
+standard_deviation_x_driver = 14
+standard_deviation_y_driver = 12
+standard_deviation_driver = [standard_deviation_x_driver, standard_deviation_y_driver]
+
+
 
 simulation_runs = 1000
 
