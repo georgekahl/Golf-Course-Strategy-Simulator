@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+from scipy.optimize import curve_fit
 from shapely.geometry import Point, Polygon
+
 
 max_distance_from_pin = 260
 min_distance_from_pin = 100
@@ -109,6 +111,18 @@ average_shot_driver = [average_distance_x_driver, average_distance_y_driver]
 standard_deviation_x_driver = 14
 standard_deviation_y_driver = 12
 standard_deviation_driver = [standard_deviation_x_driver, standard_deviation_y_driver]
+
+
+putt_lengths_ft_data = np.array([0, 3, 5, 8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+expected_putts_data = np.array([0, 1.01, 1.12, 1.5, 1.61, 1.87, 1.98, 2.06, 2.14, 2.21, 2.27, 2.32, 2.36, 2.4])
+
+
+
+
+
+
+
+
 
 
 
@@ -243,20 +257,56 @@ def simulate_shots(average_shot, standard_deviation):
 
 def distance_from_pin(pin_position, shots_x, shots_y):
     distances = []
-    print("Pin Position: ", pin_position)
+
     for i in range(len(shots_x)):
         shot = Point(shots_x[i], shots_y[i])
         distance = shot.distance(pin_position)
         distances.append(distance)
     return distances
 
-def check_hit_green(green, shots_x, shots_y):
+def check_hit_green(green, shots_x, shots_y, index):
+    shot = Point(shots_x[index], shots_y[index])
+    if green.contains(shot):
+        return True
+    return False
+
+def count_greens_hit(green, shots_x, shots_y):
     hits = 0
     for i in range(len(shots_x)):
         shot = Point(shots_x[i], shots_y[i])
         if green.contains(shot):
             hits += 1
     return hits
+
+def yards_to_feet(distance):
+    return distance*3
+
+def expected_putts_model(x, a, b, c):
+    return a * ((x+b)**c - b**c)
+
+def expected_putts(distance, a, b, c):
+    return expected_putts_model(distance, a, b, c)
+
+def fit_putting_model(putt_lengths_ft_data, expected_putts_data):
+    params, covariance = curve_fit(expected_putts_model,putt_lengths_ft_data, expected_putts_data, p0 = [0.5, 1, 0.5], bounds = (0, np.inf), maxfev=100000)
+    a, b, c, = params
+    return a, b, c, covariance
+
+def average_putts_for_green_hit(green, shots_x, shots_y, distances, a, b, c):
+    expected_putts_for_hits = []
+
+    for i in range(len(shots_x)):
+        if check_hit_green(green, shots_x, shots_y, i):
+            putt_in_ft = yards_to_feet(distances[i])
+            putts = expected_putts(putt_in_ft, a, b, c)
+            expected_putts_for_hits.append(putts)
+
+    if expected_putts_for_hits:
+        average_expected_putts = np.mean(expected_putts_for_hits)
+        return average_expected_putts
+    else:
+        return 0
+
 
 def plot_green(green, pin_position):
     green_x, green_y = green.exterior.xy
@@ -287,7 +337,7 @@ def plot_shots(shots_x, shots_y, green, pin_position, aim_x, aim_y):
 
     plt.show()
 
-def print_statment(shots_x, shots_y, hits, pin_position, distances, club):
+def print_statment(shots_x, shots_y, hits, pin_position, distances, club, average_expected_putts):
     print("Golf Course Strategy Simulator")
     print()
     print(club)
@@ -310,21 +360,39 @@ def print_statment(shots_x, shots_y, hits, pin_position, distances, club):
     print("Average distance from pin: ", np.mean(distances), "yards")
     print("Closest shot to pin: ", np.min(distances), "yards")
     print("Farthest shot from pin: ", np.max(distances), "yards")
+    print("Average putts for balls that hit the green: " ,average_expected_putts)
+
+
+
 
 
 while True:
+    #build green and pin
     green = rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, min_green_width, min_green_height, max_green_height, max_green_width, number_points_on_green)
     pin_position = set_pin_position(green)
     if pin_position is not None:
         break;
 
+#print green
 plot_green(green, pin_position)
 print_green_info(green, pin_position)
+
+#ask club and aim
 club = ask_club_selection()
 average_shot, standard_deviation = get_club_parameters(club)
 average_shot = ask_aim(average_shot)
+
+#simulate shots and find greens hit/distance from pin
 shots_x, shots_y = simulate_shots(average_shot, standard_deviation)
-hits = check_hit_green(green, shots_x, shots_y)
+hits = count_greens_hit(green, shots_x, shots_y)
 distances = distance_from_pin(pin_position, shots_x, shots_y)
-print_statment(shots_x, shots_y, hits, pin_position, distances, club)
+
+#Fit putting model
+a, b, c, covariance = fit_putting_model(putt_lengths_ft_data, expected_putts_data)
+
+#Calculate average expected putts for shots that hit the green
+average_expected_putts = average_putts_for_green_hit(green, shots_x, shots_y, distances, a, b, c)
+
+#print results
+print_statment(shots_x, shots_y, hits, pin_position, distances, club, average_expected_putts)
 plot_shots(shots_x, shots_y, green, pin_position, average_shot[0], average_shot[1])
