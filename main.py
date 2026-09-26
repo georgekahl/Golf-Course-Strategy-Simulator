@@ -116,11 +116,25 @@ standard_deviation_x_driver = 14
 standard_deviation_y_driver = 12
 standard_deviation_driver = [standard_deviation_x_driver, standard_deviation_y_driver]
 
+distance_sd_less_5yd = .5
+lateral_sd_less_5yd = .5
+
+distance_sd_5yd_to_10yd = 1
+lateral_sd_5yd_to_10yd = 1
+
+distance_sd_10yd_to_20yd = 2
+lateral_sd_10yd_to_20yd = 1
+
+distance_sd_20yd_to_30yd = 3
+lateral_sd_20yd_to_30yd = 1.5
+
+distance_sd_more_30yd = 4
+lateral_sd_more_30yd = 2
+
 putt_lengths_ft_data = np.array([0, 3, 5, 8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
 expected_putts_data = np.array([0, 1.01, 1.12, 1.5, 1.61, 1.87, 1.98, 2.06, 2.14, 2.21, 2.27, 2.32, 2.36, 2.4])
 
 simulation_runs = 1000
-
 def rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, min_green_width, min_green_height, max_green_height, max_green_width, number_points_on_green):
     while True:
         rand_center_of_green_y = random.randint(min_distance_from_pin, max_distance_from_pin)
@@ -302,20 +316,20 @@ def average_putts_for_green_hit(green, shots_x, shots_y, distances, a, b, c):
 
 def get_chip_parameters(chip_distance):
     if chip_distance <= 5:
-        distance_sd = .5
-        lateral_sd = .5
+        distance_sd = distance_sd_less_5yd
+        lateral_sd = lateral_sd_less_5yd
     elif chip_distance <= 10:
-        distance_sd = 1
-        lateral_sd = 1
+        distance_sd = distance_sd_5yd_to_10yd
+        lateral_sd = lateral_sd_5yd_to_10yd
     elif chip_distance <= 20:
-        distance_sd = 2
-        lateral_sd = 1
+        distance_sd = distance_sd_10yd_to_20yd
+        lateral_sd = lateral_sd_10yd_to_20yd
     elif chip_distance <30:
-        distance_sd = 3
-        lateral_sd = 1.5
+        distance_sd = distance_sd_20yd_to_30yd
+        lateral_sd = lateral_sd_20yd_to_30yd
     else:
-        distance_sd = 4
-        lateral_sd = 2
+        distance_sd = distance_sd_more_30yd
+        lateral_sd = lateral_sd_more_30yd
     return distance_sd, lateral_sd
 
 def simulate_chipping(shot, pin_position):
