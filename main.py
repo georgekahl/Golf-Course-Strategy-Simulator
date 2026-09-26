@@ -9,9 +9,12 @@ min_distance_from_pin = 100
 max_distance_left_from_pin = 15
 max_distance_right_from_pin = 15
 
-max_offset_from_pin_x = 10
-max_offset_from_pin_y = 10
+min_green_height = 30
+min_green_width = 30
+max_green_height = 50
+max_green_width = 45
 
+number_points_on_green = 40
 
 min_pin_distance_from_edge = 5
 
@@ -111,17 +114,40 @@ standard_deviation_driver = [standard_deviation_x_driver, standard_deviation_y_d
 
 simulation_runs = 1000
 
-def rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, max_offset_from_pin_x, max_offset_from_pin_y):
-    rand_center_of_green_y = random.randint(min_distance_from_pin, max_distance_from_pin)
-    rand_center_of_green_x = random.randint(-max_distance_left_from_pin, max_distance_right_from_pin)
+def rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, min_green_width, min_green_height, max_green_height, max_green_width, number_points_on_green):
+    while True:
+        rand_center_of_green_y = random.randint(min_distance_from_pin, max_distance_from_pin)
+        rand_center_of_green_x = random.randint(-max_distance_left_from_pin, max_distance_right_from_pin)
 
-    rand_x_offset = [random.randint(-max_offset_from_pin_x, max_offset_from_pin_x) for _ in range(6)]
-    rand_y_offset = [random.randint(-max_offset_from_pin_y, max_offset_from_pin_y) for _ in range(6)]
+        width = random.uniform(min_green_width, max_green_width)
+        height = random.uniform(min_green_height, max_green_height)
 
-    green_points = [ (rand_center_of_green_x + rand_x_offset[0], rand_center_of_green_y + rand_y_offset[0]), (rand_center_of_green_x + rand_x_offset[1], rand_center_of_green_y + rand_y_offset[1]), (rand_center_of_green_x + rand_x_offset[2], rand_center_of_green_y + rand_y_offset[2]), (rand_center_of_green_x + rand_x_offset[3], rand_center_of_green_y + rand_y_offset[3]), (rand_center_of_green_x + rand_x_offset[4], rand_center_of_green_y + rand_y_offset[4]), (rand_center_of_green_x + rand_x_offset[5], rand_center_of_green_y + rand_y_offset[5]) ]
-    green = Polygon(green_points)
-    return green
+        radius_x = width / 2
+        radius_y = height / 2
 
+
+        green_points = []
+
+        for i in range(number_points_on_green):
+            angle = (2*np.pi *i) / number_points_on_green
+
+            random_radius = random.uniform(0.90, 1.10)
+
+            x = (rand_center_of_green_x + radius_x * random_radius * np.cos(angle))
+            y = (rand_center_of_green_y + radius_y * random_radius * np.sin(angle))
+
+            green_points.append((x,y))
+
+        green = Polygon(green_points)
+
+        min_x, min_y, max_x, max_y = green.bounds
+
+        actual_width = max_x - min_x
+        actual_height = max_y - min_y
+
+        if actual_width >= min_green_width and actual_height >= min_green_height:
+            return green
+        
 def set_pin_position(green):
     pin_area = green.buffer(-min_pin_distance_from_edge)
 
@@ -206,8 +232,8 @@ def ask_club_selection():
 def ask_aim(average_shot):
     x_aim = float(input("Aim left/right (negative for left, positive for right)"))
     y_aim = float(input("Aim short/long"))
-    aim_x = average_shot[0] = average_shot[0] + x_aim
-    aim_y = average_shot[1] = average_shot[1] + y_aim
+    aim_x = average_shot[0] + x_aim
+    aim_y = average_shot[1] + y_aim
     return [aim_x, aim_y]
 
 def simulate_shots(average_shot, standard_deviation):
@@ -261,10 +287,10 @@ def plot_shots(shots_x, shots_y, green, pin_position, aim_x, aim_y):
 
     plt.show()
 
-def print_statment(shots_x, shots_y, hits, pin_position, distances):
+def print_statment(shots_x, shots_y, hits, pin_position, distances, club):
     print("Golf Course Strategy Simulator")
     print()
-    print("Pitching Wedge")
+    print(club)
     print("-------------------------")
     print("Pin Position:", f"({pin_position.x:.2f}, {pin_position.y:.2f})")
     print()
@@ -287,7 +313,7 @@ def print_statment(shots_x, shots_y, hits, pin_position, distances):
 
 
 while True:
-    green = rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, max_offset_from_pin_x, max_offset_from_pin_y)
+    green = rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, min_green_width, min_green_height, max_green_height, max_green_width, number_points_on_green)
     pin_position = set_pin_position(green)
     if pin_position is not None:
         break;
@@ -300,5 +326,5 @@ average_shot = ask_aim(average_shot)
 shots_x, shots_y = simulate_shots(average_shot, standard_deviation)
 hits = check_hit_green(green, shots_x, shots_y)
 distances = distance_from_pin(pin_position, shots_x, shots_y)
-print_statment(shots_x, shots_y, hits, pin_position, distances)
+print_statment(shots_x, shots_y, hits, pin_position, distances, club)
 plot_shots(shots_x, shots_y, green, pin_position, average_shot[0], average_shot[1])
