@@ -355,7 +355,7 @@ def simulate_chipping(shot, pin_position):
 
     return Point(chip_x, chip_y)
 
-def simulate_chip_and_putt(shot, green, pin_position, a, b, c):
+def simulate_chip_and_calculate_putt(shot, green, pin_position, a, b, c):
     chip = simulate_chipping(shot, pin_position)
 
     if green.contains(chip):
@@ -363,11 +363,11 @@ def simulate_chip_and_putt(shot, green, pin_position, a, b, c):
         putt_distance = yards_to_feet(chip_to_pin)
         putts = expected_putts(putt_distance, a, b, c)
 
-        expected_strokes = 1 + putts
+        expected_strokes = 2 + putts
 
-        return chip, True, expected_strokes
+        return chip, True, expected_strokes, putts
     else:
-        return chip, False, None
+        return chip, False, None, None
 
 
 def plot_green(green, pin_position):
@@ -414,7 +414,7 @@ def print_statment(club, average_expected_putts, green_hit_count, simulation_run
     print("Chips that missed the green:",chip_miss_count)
     print()
     print("Average expected strokes:",average_expected_strokes)
-    print("Average expected putts:",average_expected_putts)
+    print("Average putts after reaching green:",average_expected_putts)
     print()
 
 while True:
@@ -435,7 +435,6 @@ average_shot = ask_aim(average_shot)
 
 #simulate shots and find greens hit/distance from pin
 shots_x, shots_y = simulate_shots(average_shot, standard_deviation)
-hits = count_greens_hit(green, shots_x, shots_y)
 distances = distance_from_pin(pin_position, shots_x, shots_y)
 
 
@@ -445,6 +444,9 @@ a, b, c, covariance = fit_putting_model(putt_lengths_ft_data, expected_putts_dat
 
 #Calculate average expected putts for shots that hit the green
 expected_strokes = []
+expected_putts_list = []
+
+
 green_hit_count = 0
 chip_count = 0
 chip_green_count = 0
@@ -457,7 +459,6 @@ for i in range (len(shots_x)):
         green_hit_count += 1
 
         putt_distance_yards = shot.distance(pin_position)
-
         putt_distance_ft = yards_to_feet(putt_distance_yards)
 
         putts = expected_putts(putt_distance_ft, a, b, c)
@@ -465,14 +466,18 @@ for i in range (len(shots_x)):
         total_expected_strokes = 1 + putts
 
         expected_strokes.append(total_expected_strokes)
+        expected_putts_list.append(putts)
     else:
         chip_count += 1
-        chip, chip_hit_green, chip_expected_strokes = (simulate_chip_and_putt(shot, green, pin_position, a, b, c))
+
+        chip, chip_hit_green, chip_expected_strokes, putts = (simulate_chip_and_calculate_putt(shot, green, pin_position, a, b, c))
 
         if chip_hit_green:
             chip_green_count += 1
 
+
             expected_strokes.append(chip_expected_strokes)
+            expected_putts_list.append(putts)
 
         else:
             chip_miss_count += 1
@@ -480,9 +485,13 @@ for i in range (len(shots_x)):
             total_expected_strokes = (1 + 1 + recovery_strokes)
             expected_strokes.append(total_expected_strokes)
 
+
 average_expected_strokes = np.mean(expected_strokes)
 
-average_expected_putts = (average_expected_strokes -1)
+if expected_putts_list:
+    average_expected_putts = np.mean(expected_putts_list)
+else:
+    average_expected_putts = 0
 
 #print results
 print_statment(club, average_expected_putts, green_hit_count, simulation_runs, chip_count, chip_green_count, chip_miss_count, average_expected_strokes)
