@@ -6,6 +6,15 @@ from scipy.stats import truncnorm
 from shapely.geometry import Point, Polygon
 
 
+#To-do
+#Add bunckers/rough
+#Add Wind
+#Add aim-point optimization
+#Add club optimization
+# build an 18 hold simulator
+
+
+
 
 #Settings
 max_distance_from_pin = 260
