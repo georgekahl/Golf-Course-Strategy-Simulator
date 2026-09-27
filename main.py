@@ -361,7 +361,7 @@ def simulate_chipping(shot, pin_position):
     perp_y = unit_x
 
     lower_bound = (0-chip_distance) / distance_sd
-    actual_chip_distance = truncorm.rvs(lower_bound, np.inf, loc = chip_distance, scale = distance_sd)
+    actual_chip_distance = truncnorm.rvs(lower_bound, np.inf, loc = chip_distance, scale = distance_sd)
 
     
     lateral_error = np.random.normal(0,lateral_sd)
