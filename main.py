@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from scipy.optimize import curve_fit
+from scipy.stats import truncnorm
 from shapely.geometry import Point, Polygon
+
+
 
 #Settings
 max_distance_from_pin = 260
@@ -357,12 +360,14 @@ def simulate_chipping(shot, pin_position):
     perp_x = -unit_y
     perp_y = unit_x
 
-    distance_error = np.random.normal(0,distance_sd)
+    lower_bound = (0-chip_distance) / distance_sd
+    actual_chip_distance = truncorm.rvs(lower_bound, np.inf, loc = chip_distance, scale = distance_sd)
+
+    
     lateral_error = np.random.normal(0,lateral_sd)
 
-
-    chip_x = (shot.x + unit_x * (chip_distance + distance_error) + perp_x * lateral_error)
-    chip_y = (shot.y + unit_y * (chip_distance + distance_error) + perp_y * lateral_error)
+    chip_x = (shot.x + unit_x * actual_chip_distance + perp_x * lateral_error)
+    chip_y = (shot.y + unit_y * actual_chip_distance + perp_y * lateral_error)
 
     return Point(chip_x, chip_y)
 
