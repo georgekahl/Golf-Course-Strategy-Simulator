@@ -35,6 +35,9 @@ min_pin_distance_from_edge = 5
 simulation_runs = 1000
 
 #Club data
+
+valid_clubs = ["58 degree wedge", "54 degree wedge", "50 degree wedge", "pitching wedge", "9 iron", "8 iron", "7 iron", "6 iron", "5 iron", "4 iron", "4 hybrid", "3 wood", "driver"]
+
 average_distance_x_58degreeWedge = 0
 average_distance_y_58degreeWedge = 100
 average_shot_58degreeWedge = [average_distance_x_58degreeWedge, average_distance_y_58degreeWedge]
@@ -145,6 +148,17 @@ lateral_sd_more_30yd = 2
 #Putting data
 putt_lengths_ft_data = np.array([0, 3, 5, 8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
 expected_putts_data = np.array([0, 1.01, 1.12, 1.5, 1.61, 1.87, 1.98, 2.06, 2.14, 2.21, 2.27, 2.32, 2.36, 2.4])
+
+#Optimizer Settings
+optimization_min_swing = 50
+optimization_max_swing = 100
+optimization_swing_step = 5
+
+optimization_min_aim = -10
+optimization_max_aim = 10
+optimization_aim_step = 1
+
+optimization_simulation_runs = 500
 
 #Green creation
 def rand_green_creation(max_distance_from_pin, min_distance_from_pin, max_distance_left_from_pin, max_distance_right_from_pin, min_green_width, min_green_height, max_green_height, max_green_width, number_points_on_green):
@@ -262,8 +276,7 @@ def get_club_parameters(club):
             return average_shot, standard_deviation
 
 
-def ask_club_selection():
-    valid_clubs = ["58 degree wedge", "54 degree wedge", "50 degree wedge", "pitching wedge", "9 iron", "8 iron", "7 iron", "6 iron", "5 iron", "4 iron", "4 hybrid", "3 wood", "driver"]
+def ask_club_selection(valid_clubs):
     while True:
         club = input("Which club would you like to use? ")
         if club in valid_clubs:
@@ -286,6 +299,7 @@ def ask_swing_percentage():
         if 0 < swing_percentage <= 1:
             return swing_percentage
         print("Please enter a percentage between 1 and 100.")
+
 #Swing adjustments
 def get_swing_standard_deviation(standard_deviation, swing_percentage, sd_k = 1.5):
     swing_sd_multiplier = swing_percentage ** sd_k
@@ -441,6 +455,79 @@ def evaluate_shots(shots_x, shots_y, green, pin_position, a, b, c):
         average_expected_putts = 0
     return (average_expected_strokes, average_expected_putts, green_hit_count, chip_count, chip_green_count, chip_miss_count)
 
+def optimization(green, pin_position, putt_a, putt_b, putt_c):
+
+    import time
+
+    results = []
+
+    swing_percentages = np.arange(optimization_min_swing, optimization_max_swing + optimization_swing_step, optimization_swing_step)
+    aim_values = np.arange(optimization_min_aim, optimization_max_aim + optimization_aim_step, optimization_aim_step)
+
+    total_combinations = (len(valid_clubs) * len(swing_percentages) * len(aim_values))
+
+    completed = 0
+
+    start_time = time.perf_counter()
+
+    print()
+    print("========================================")
+    print("          STARTING OPTIMIZATION")
+    print("========================================")
+    print(f"Strategies to test: {total_combinations:,}")
+    print(f"Shots per strategy: {optimization_simulation_runs:,}")
+    print(f"Total simulated shots: " f"{total_combinations * optimization_simulation_runs:,}")
+    print()
+
+    for club in valid_clubs:
+        average_shot, standard_deviation = get_club_parameters(club)
+
+        for swing_percentage in swing_percentages:
+            swing = swing_percentage / 100
+
+            adjusted_standard_deviation = get_swing_standard_deviation(standard_deviation, swing)
+            adjusted_distance = get_swing_distance(average_shot, swing)
+
+            for aim in aim_values:
+                aim_x = average_shot[0] + aim
+                adjusted_distance[0] = aim_x
+                shots_x, shots_y = simulate_shots(adjusted_distance, adjusted_standard_deviation, optimization_simulation_runs)
+                (average_expected_strokes,average_expected_putts,green_hit_count,chip_count,chip_green_count, chip_miss_count) = evaluate_shots(shots_x, shots_y, green, pin_position, putt_a, putt_b, putt_c)
+                results.append({"club": club, "swing_percentage": swing_percentage, "aim": aim, "expected_strokes": average_expected_strokes, "expected_putts": average_expected_putts,"green_hit_percentage": green_hit_count / optimization_simulation_runs * 100, "chip_success_percentage": (chip_green_count / chip_count * 100 if chip_count > 0 else 0)})
+
+                completed += 1
+
+                if completed % 100 == 0 or completed == total_combinations:
+                    elapsed = time.perf_counter() - start_time
+
+                    progress = (completed/total_combinations)
+
+                    percentage = progress * 100
+
+                    estimated_total = (elapsed/progress)
+
+                    remaining = (estimated_total - elapsed)
+
+                    elapsed_minutes = elapsed / 60
+                    remaining_minutes = remaining / 60
+
+                    print( f"{completed:,}/{total_combinations:,} " f"({percentage:5.1f}%) | "f"Elapsed: {elapsed_minutes:5.1f} min | " f"Remaining: {remaining_minutes:5.1f} min | " f"{club}, " f"{swing_percentage:.0f}%, "f"aim {aim:+.0f}")
+
+
+    best_result = min(results, key = lambda result: result ["expected_strokes"])
+
+    total_time = time.perf_counter() - start_time
+
+    print()
+    print("=========================================")
+    print("             OPTIMIZATION FINISHED")
+    print("=========================================")
+    print(f"Strategies tested: " f"{total_combinations:,}")
+    print(f"Shots simulated: " f"{total_combinations * optimization_simulation_runs:,}")
+    print()
+
+
+    return best_result, results
 #Plotting
 def plot_green(green, pin_position):
     green_x, green_y = green.exterior.xy
@@ -490,6 +577,23 @@ def print_statement(club, average_expected_putts, green_hit_count, simulation_ru
     print("Average putts after reaching green:",average_expected_putts)
     print()
 
+def print_optimization_results(best_result):
+    print()
+    print()
+    print("========================================")
+    print("          OPTIMAL SHOT STRATEGY")
+    print("========================================")
+    print()
+
+    print("Club:", best_result["club"])
+    print("Swing:", f'{best_result["swing_percentage"]:.0f}%')
+    print("Aim:", f'{best_result["aim"]:+.1f} yards')
+    print("Expected strokes", f'{best_result["expected_strokes"]:.3f}')
+    print("Expected putts:", f'{best_result["expected_putts"]:.3f}')
+    print("Green hit percentage:" f'{best_result["green_hit_percentage"]:.1f}%')
+    print("Chip success percentage:", f'{best_result["chip_success_percentage"]:.1f}%')
+    print()
+                                             
 #Main
 
 #Uncomment for repeatable sim
@@ -506,32 +610,33 @@ while True:
 plot_green(green, pin_position)
 print_green_info(green, pin_position)
 
-#ask club and aim
-club = ask_club_selection()
+a, b, c, covariance = fit_putting_model(putt_lengths_ft_data,expected_putts_data)
+
+best_result, optimization_results = optimization(green, pin_position, a, b, c)
+
+print_optimization_results(best_result)
+
+club = best_result["club"]
+swing_percentage = best_result["swing_percentage"] / 100
+aim = best_result["aim"]
+
 average_shot, standard_deviation = get_club_parameters(club)
 
-swing_percentage = ask_swing_percentage()
-
-aim_x = ask_aim(average_shot)
 
 
 adjusted_standard_deviation = get_swing_standard_deviation(standard_deviation, swing_percentage)
 adjusted_distance = get_swing_distance(average_shot, swing_percentage)
 
+aim_x = average_shot[0] + aim
 adjusted_distance[0] = aim_x
 
 #simulate shots and find greens hit/distance from pin
 shots_x, shots_y = simulate_shots(adjusted_distance, adjusted_standard_deviation, simulation_runs)
-distances = distance_from_pin(pin_position, shots_x, shots_y)
 
-
-
-#Fit putting model
-a, b, c, covariance = fit_putting_model(putt_lengths_ft_data, expected_putts_data)
-
-#Calculate average expected putts for shots that hit the green
-average_expected_strokes, average_expected_putts, green_hit_count, chip_count, chip_green_count, chip_miss_count = evaluate_shots(shots_x,shots_y,green,pin_position,a,b,c)
+(average_expected_strokes,average_expected_putts, green_hit_count, chip_count, chip_green_count, chip_miss_count) = evaluate_shots(shots_x, shots_y, green, pin_position, a, b, c)
 
 #print results
+print()
+print("========== FINAL SIMULATION ==========")
 print_statement(club, average_expected_putts, green_hit_count, simulation_runs, chip_count, chip_green_count, chip_miss_count, average_expected_strokes)
 plot_shots(shots_x, shots_y, green, pin_position, aim_x, adjusted_distance[1])
