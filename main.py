@@ -131,6 +131,8 @@ lateral_sd_20yd_to_30yd = 1.5
 distance_sd_more_30yd = 4
 lateral_sd_more_30yd = 2
 
+hundred_percent_swing_sd = 1
+ninety_percent_swing_sd = .9
 putt_lengths_ft_data = np.array([0, 3, 5, 8, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
 expected_putts_data = np.array([0, 1.01, 1.12, 1.5, 1.61, 1.87, 1.98, 2.06, 2.14, 2.21, 2.27, 2.32, 2.36, 2.4])
 
@@ -251,11 +253,28 @@ def ask_club_selection():
     return club
 
 def ask_aim(average_shot):
-    x_aim = float(input("Aim left/right (negative for left, positive for right)"))
-    y_aim = float(input("Aim short/long"))
+    swing_percentage = float(input("Swing Percentage: ")) / 100
+
+    x_aim = float(input("Aim left/right (negative for left, positive for right) "))
+
     aim_x = average_shot[0] + x_aim
-    aim_y = average_shot[1] + y_aim
-    return [aim_x, aim_y]
+    aim_y = average_shot[1] * swing_percentage
+    return [aim_x, aim_y], swing_percentage
+
+def get_swing_standard_deviation(standard_deviation, swing_percentage, sd_k = 1.5):
+    swing_sd_multiplier = swing_percentage ** sd_k
+
+    adjusted_sd_x = standard_deviation[0] * swing_sd_multiplier
+    adjusted_sd_y = standard_deviation[1] * swing_sd_multiplier
+    return [adjusted_sd_x, adjusted_sd_y]
+
+def get_swing_distance(average_shot, swing_percentage, d_k = 0.7):
+    distance_multiplier = swing_percentage **d_k
+
+    adjusted_x = average_shot[0]
+    adjusted_y = average_shot[1] * distance_multiplier
+
+    return [adjusted_x, adjusted_y]
 
 def simulate_shots(average_shot, standard_deviation):
     shots_x = np.random.normal(average_shot[0], standard_deviation[0], simulation_runs)
@@ -431,10 +450,13 @@ print_green_info(green, pin_position)
 #ask club and aim
 club = ask_club_selection()
 average_shot, standard_deviation = get_club_parameters(club)
-average_shot = ask_aim(average_shot)
+average_shot, swing_percentage = ask_aim(average_shot)
+
+adjusted_standard_deviation = get_swing_standard_deviation(standard_deviation, swing_percentage)
+adjusted_distance = get_swing_distance(average_shot, swing_percentage)
 
 #simulate shots and find greens hit/distance from pin
-shots_x, shots_y = simulate_shots(average_shot, standard_deviation)
+shots_x, shots_y = simulate_shots(adjusted_distance, adjusted_standard_deviation)
 distances = distance_from_pin(pin_position, shots_x, shots_y)
 
 
